@@ -6,6 +6,7 @@ toolfiles/
 dependency-reduced-pom.xml
 mvnw
 mvnw.cmd
+.mvn/
 
 ### IntelliJ IDEA ###
 .idea/
@@ -41,3 +42,4 @@ build/
 
 ### Mac OS ###
 .DS_Store
+/.mvn/
