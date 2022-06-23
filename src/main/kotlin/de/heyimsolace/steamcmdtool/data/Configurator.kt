@@ -14,7 +14,8 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.*
 import kotlin.collections.ArrayList
 
-class Configurator {
+
+class Configurator private constructor() {
 
     companion object {
         @JvmStatic
@@ -28,12 +29,17 @@ class Configurator {
             return instance as Configurator;
         }
     }
+
+    //Config stuff thats used throughout the program
     val configpath = loadConfigpath()
     val configprops = loadConfig()
     val steamcmdPath = loadConfig().getProperty("steamcmdpath")
     val isTest = loadConfig().getProperty("istest").toBoolean()
     val LOGINS = loadLogins();
 
+    /**
+     * Loads the config file from the config.properties file
+     */
     private fun loadConfig(): Properties {
         val props = Properties()
         val configFile = File("$configpath/config.properties")
@@ -54,6 +60,9 @@ class Configurator {
         return props
     }
 
+    /**
+     * Loads the Login presets from the logins.json file
+     */
     private fun loadLogins(): ArrayList<SteamLogin> {
         val configFile = File("$configpath/logins.json")
         val gson = Gson()
@@ -71,6 +80,12 @@ class Configurator {
         }
     }
 
+    /**
+     * Tries to load the configpath
+     * The configpath is the working directory of the program and then /toolfiles
+     *
+     * if the configpath is not found, the program will create it
+     */
     private fun loadConfigpath(): String {
         var path = Paths.get("").toAbsolutePath().toString() + "/toolfiles"
         return if (Files.exists(Paths.get(path))) {
@@ -83,14 +98,17 @@ class Configurator {
     }
 
 
-    //Lädt alle SteamApp IDs aus einer JSON oder von der Steam API
-    fun loadSteamAppContainerJson(): String {
-        val configFile = File("$configpath/steamappcontainer.json")
+    /**
+     * Tries to load all SteamApp ids from either the file or the API
+     * if the file is either not found or older than 24 hours, the API will be used to create the file
+     */
+    public fun loadSteamAppContainerJson(): String {
+        val appidfile = File("$configpath/steamappcontainer.json")
 
         val fileExists = Files.exists(Paths.get("$configpath/steamappcontainer.json"))
 
         if (fileExists){
-            var attr = Files.readAttributes(configFile.toPath(), BasicFileAttributes::class.java)
+            var attr = Files.readAttributes(appidfile.toPath(), BasicFileAttributes::class.java)
             var filetime = attr.lastModifiedTime()
             val fileOld = filetime.toMillis() < System.currentTimeMillis() - (1000 * 60 * 60 * 24)
 
@@ -98,12 +116,15 @@ class Configurator {
                 return rereadJsonFromAPI()
             }
             println("AppIDs aus Datei gelesen!")
-            return configFile.readText()
+            return appidfile.readText()
         }
         return rereadJsonFromAPI()
 
     }
 
+    /**
+     * Tries to load all SteamApp ids from the API
+     */
     private fun rereadJsonFromAPI(): String {
         val configFile = File("$configpath/steamappcontainer.json")
         val path: String = "https://api.steampowered.com/ISteamApps/GetAppList/v0002/?key=STEAMKEY&format=json"
@@ -117,6 +138,9 @@ class Configurator {
         return json;
     }
 
+    /**
+     * Adds an entry to the logins.json file
+     */
     public fun addPreset(preset: SteamLogin) {
         val configFile = File("$configpath/logins.json")
         val gson = Gson()
