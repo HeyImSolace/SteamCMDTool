@@ -5,7 +5,7 @@ import de.heyimsolace.steamcmdtool.data.SteamAppContainer
 import de.heyimsolace.steamcmdtool.data.SteamLogin
 import de.heyimsolace.steamcmdtool.gui.installer.ConsoleDisplay
 import de.heyimsolace.steamcmdtool.gui.installer.TFAModal
-import de.heyimsolace.steamcmdtool.gui.installer.gui.util.AutocompletionlTextField
+import de.heyimsolace.steamcmdtool.gui.util.AutocompletionlTextField
 import javafx.application.Application
 import javafx.event.ActionEvent
 import javafx.geometry.Insets

@@ -1,4 +1,4 @@
-package de.heyimsolace.steamcmdtool.gui.installer.gui.util;
+package de.heyimsolace.steamcmdtool.gui.util;
 
 import javafx.geometry.Side;
 import javafx.scene.control.ContextMenu;
