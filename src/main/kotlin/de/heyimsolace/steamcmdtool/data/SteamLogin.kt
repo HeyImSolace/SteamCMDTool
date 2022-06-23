@@ -1,4 +1,4 @@
-package de.heyimsolace.steamcmdtool
+package de.heyimsolace.steamcmdtool.data
 
 data class SteamLogin(var name: String, var pass: String) {
 

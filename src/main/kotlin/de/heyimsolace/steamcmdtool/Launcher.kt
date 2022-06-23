@@ -8,6 +8,6 @@ import java.nio.file.Paths
 import java.util.*
 
 fun main (args: Array<String>) {
-    Application.launch(MainApp::class.java)
+    Application.launch(InstallerMain::class.java)
 }
 

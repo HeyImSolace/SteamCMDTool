@@ -1,4 +1,4 @@
-package de.heyimsolace.steamcmdtool
+package de.heyimsolace.steamcmdtool.data
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -31,24 +31,24 @@ class Configurator {
     val configpath = loadConfigpath()
     val configprops = loadConfig()
     val steamcmdPath = loadConfig().getProperty("steamcmdpath")
+    val isTest = loadConfig().getProperty("istest").toBoolean()
     val LOGINS = loadLogins();
 
     private fun loadConfig(): Properties {
         val props = Properties()
         val configFile = File("$configpath/config.properties")
         if (configFile.exists()) {
-            println("Config file found")
             props.load(configFile.inputStream())
-            println(props["steamcmdpath"])
         } else {
             //create default config
             configFile.createNewFile()
             props.setProperty("steamcmdpath", "PUT YOUR STEAMCMD PATH HERE")
-            props.store(configFile.outputStream(), "");
+            props.setProperty("istest", "true")
+            props.store(configFile.outputStream(), "steamcmdpath must be with forwardslashes (/)\n if istest is true, the actual process will be a ping to google.com");
             Alert(Alert.AlertType.INFORMATION).apply {
                 title = "SteamCMD Tool"
                 headerText = "Config file created"
-                contentText = "Please set the steamcmd path in the config file"
+                contentText = "You MUST set the steamcmd path in the config file"
             }.showAndWait()
         }
         return props

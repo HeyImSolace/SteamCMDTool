@@ -1,5 +1,11 @@
 package de.heyimsolace.steamcmdtool
 
+import de.heyimsolace.steamcmdtool.data.Configurator
+import de.heyimsolace.steamcmdtool.data.SteamAppContainer
+import de.heyimsolace.steamcmdtool.data.SteamLogin
+import de.heyimsolace.steamcmdtool.gui.installer.ConsoleDisplay
+import de.heyimsolace.steamcmdtool.gui.installer.TFAModal
+import de.heyimsolace.steamcmdtool.gui.installer.gui.util.AutocompletionlTextField
 import javafx.application.Application
 import javafx.event.ActionEvent
 import javafx.geometry.Insets
@@ -10,59 +16,48 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.VBox
 import javafx.scene.text.Font
 import javafx.stage.DirectoryChooser
-import javafx.stage.Modality
 import javafx.stage.Stage
+import jfxtras.styles.jmetro.JMetro
+import jfxtras.styles.jmetro.JMetroStyleClass
+import jfxtras.styles.jmetro.Style
 import org.controlsfx.control.textfield.TextFields
-import java.io.BufferedReader
 
-class MainApp : Application() {
+class InstallerMain : Application() {
 
     private var root: VBox = VBox()
     private var scene: Scene = Scene(root)
+    private var jMetro: JMetro = JMetro(Style.DARK)
+    private var stage: Stage = Stage(); //only temporary, is getting set by the start method
 
     private var loginL: Label = Label("Login")
     private var appidL: Label = Label("AppID")
     private var pathL: Label = Label("Path")
     private var presetL: Label = Label("Preset")
-    private var authL: Label = Label("2FA Code:")
     private var header: Label = Label("SteamCMD Tool")
 
     private var loginPresetCB: ComboBox<SteamLogin> = ComboBox()
 
-    private var loginTf: TextField = TextFields.createClearableTextField()
-    private var passwordTf: TextField = TextFields.createClearablePasswordField()
-    private var appidTf: AutocompletionlTextField = AutocompletionlTextField()
-    private var authTF: TextField = TextFields.createClearableTextField()
+    private var loginTf: TextField = TextField()
+    private var passwordTf: TextField = PasswordField()
+    private var appidTf: AutocompletionlTextField =
+        AutocompletionlTextField()
 
     private var targetPath: TextField = TextFields.createClearableTextField()
     private var pathButton: Button = Button("...")
     private var pathChooser: DirectoryChooser = DirectoryChooser()
     private var startButton: Button = Button("Install")
-    private var confirmButton: Button = Button("Confirm")
+
     private var addUserButton: Button = Button("+")
 
     private var grid: GridPane = GridPane()
-    private var authStage: Stage = Stage()
-    private var authRoot: VBox = VBox()
-    private var authScene: Scene = Scene(authRoot)
 
-    private var consoleStage: Stage = Stage()
-    private var consoleRoot: VBox = VBox()
-    private var consoleScene: Scene = Scene(consoleRoot)
-    private var consoleScrollPane: ScrollPane = ScrollPane()
-    private var consoleTextArea: TextArea = TextArea()
-    private var consoleButton: Button = Button("Done")
 
 
     override fun start(stage: Stage) {
-
+        this.stage = stage
         stage.title = "SteamCMD Tool"
         stage.scene = buildScene()
         stage.show()
-    }
-
-    fun main(args: Array<String>) {
-        launch(MainApp::class.java)
     }
 
     private fun buildScene(): Scene {
@@ -89,13 +84,6 @@ class MainApp : Application() {
             presetCBAction()
         }
 
-        confirmButton.setOnAction {
-            authStage.close()
-        }
-
-        consoleButton.setOnAction {
-            consoleStage.close()
-        }
 
         addUserButton.setOnAction {
             addUserButtonAction()
@@ -118,67 +106,41 @@ class MainApp : Application() {
         root.padding = Insets(10.0)
         root.alignment = Pos.CENTER
 
-        //Auth window stuff
-        authRoot.children.addAll(authL, authTF, confirmButton)
-        authRoot.alignment = Pos.CENTER
-        authRoot.spacing = 10.0
-        authRoot.padding = Insets(10.0)
-        authStage.scene = authScene
-        authStage.initModality(Modality.WINDOW_MODAL)
-        authStage.initOwner(scene.window)
 
-        //Console window stuff
-        consoleRoot.padding = Insets(10.0)
-        consoleRoot.alignment = Pos.CENTER
-
-        consoleScrollPane.content = consoleTextArea
-        consoleTextArea.isEditable = false
-        consoleStage.initModality(Modality.WINDOW_MODAL)
-        consoleStage.initOwner(scene.window)
-
-        consoleRoot.children.addAll(Label("Console:"), consoleScrollPane, consoleButton)
-        consoleStage.scene = consoleScene
+        jMetro.scene = scene
+        root.styleClass.add(JMetroStyleClass.BACKGROUND)
         return scene
     }
 
 
     private fun runSteamCmd(login: String, password: String, auth: String, appid: String, path: String) {
-        consoleButton.isDisable = true
-        consoleTextArea.text = ""
-        consoleStage.show()
+
+        val display = ConsoleDisplay(this.stage)
+        val finalCheck = Alert(Alert.AlertType.CONFIRMATION, "u sure?").showAndWait()
+        if (finalCheck.get() == ButtonType.OK) {
 
         val config = Configurator.getConfigurator()
-        var processbuilder = ProcessBuilder(config.steamcmdPath + "steamcmd.exe", "+force_install_dir $path", "+login $login $password $auth", "+app_update $appid + validate", "+quit")
-
-        //for testing:
-        //var processbuilder = ProcessBuilder("cmd.exe", "/c", "dir")
+        //for testing
+        val processbuilder = if (config.isTest){
+                ProcessBuilder("cmd.exe", "/c", "ping -n 15 google.com")
+            } else {
+                ProcessBuilder(config.steamcmdPath + "steamcmd.exe", "+force_install_dir $path", "+login $login $password $auth", "+app_update $appid + validate", "+quit")
+            }
         processbuilder.redirectErrorStream(true)
         val process = processbuilder.start()
-        val consoleReader = BufferedReader(process.inputStream.bufferedReader())
-
-        val readerThread = Thread() {
-            var out = consoleReader.readLine();
-            while (out != null) {
-                consoleTextArea.appendText(out + "\n")
-                println()
-                out = consoleReader.readLine();
-            }
+        display.showProcessLog(process)
+        process.waitFor()
+        process.destroy()
+        } else {
+            display.close()
         }
-        readerThread.start()
-
-        while (readerThread.isAlive) {
-            Thread.sleep(100)
-        }
-        consoleButton.isDisable = false
-
     }
 
     private fun startButtonAction(action: ActionEvent) {
-        authStage.showAndWait()
+        val auth = TFAModal(this.stage).showAndReturnAuth().trim()
 
         val login = loginTf.text
         val password = passwordTf.text
-        val auth = authTF.text
         val appid = appidTf.text.substringBefore(" - ")
         val path = targetPath.text
         if (login.isEmpty() || (password.isEmpty() && !login.equals("anonymous")) || (auth.isEmpty() && !login.equals("anonymous")) || appid.isEmpty() || path.isEmpty()) {
@@ -202,10 +164,6 @@ class MainApp : Application() {
             loginTf.text = login.name
             passwordTf.text = login.pass
         }
-    }
-
-    private fun consoleButtonAction() {
-        consoleStage.close()
     }
 
     private fun addUserButtonAction() {

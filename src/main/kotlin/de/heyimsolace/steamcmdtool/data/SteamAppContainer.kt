@@ -1,12 +1,7 @@
-package de.heyimsolace.steamcmdtool
+package de.heyimsolace.steamcmdtool.data
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.time.LocalDateTime
 
 data class SteamAppContainer (var applist: Applist) {
     data class Applist (var apps: Array<App>) {
@@ -20,12 +15,12 @@ data class SteamAppContainer (var applist: Applist) {
 
         @JvmStatic
         fun buildContainer(): SteamAppContainer? {
-            if (SteamAppContainer.container == null) {
+            if (container == null) {
                 var json = Configurator.getConfigurator().loadSteamAppContainerJson()
                 val type = object: TypeToken<SteamAppContainer>() {}.type
-                SteamAppContainer.container = Gson().fromJson<SteamAppContainer>(json, type)
+                container = Gson().fromJson<SteamAppContainer>(json, type)
             }
-            return SteamAppContainer.container
+            return container
         }
     }
 }
